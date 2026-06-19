@@ -17,6 +17,9 @@ db.sqlite3
 /media/
 /data_store/
 
+# Generated redaction outputs (input fixtures in sample_data/ are kept)
+/sample_data/output/
+
 # Test / coverage
 .pytest_cache/
 .coverage

@@ -1,0 +1,13 @@
+account_holder,email,phone,account_number,card_number,balance,ssn
+John Doe,john.doe@bank.com,415-555-0132,ACC100245,4532 1234 5678 9012,"$12,345.67",123-45-6789
+Jane Smith,jane.smith@bank.com,(212) 555-0188,ACC100246,5500-0000-0000-0004,"$987.50",223-45-6780
+Alice Brown,alice.brown@bank.com,212.555.0143,ACC100247,4111111111111111,"$1,000,000.00",323-45-6781
+Bob Martin,bob.martin@bank.com,+1 415 555 0177,ACC100248,3400 000000 00009,"$250.00",423-45-6782
+Carol White,carol.white@bank.com,305-555-0150,ACC100249,6011 0009 9013 9424,"$0.00",523-45-6783
+David Lee,david.lee@bank.com,(650) 555-0111,ACC100250,4532-7153-3790-1112,"$2,500,000.00",623-45-6784
+Emma Davis,emma.davis@bank.com,718-555-0164,ACC100251,5105 1051 0510 5100,"$48,920.10",723-45-6785
+Frank Moore,frank.moore@bank.com,415-555-0190,ACC100252,4485 0000 0000 0005,"$7,640.99",823-45-6786
+Grace Kim,grace.kim@bank.com,(503) 555-0133,ACC100253,4716 0000 0000 0008,"$13,200.00",923-45-6787
+Henry Clark,henry.clark@bank.com,602-555-0148,ACC100254,6011 1111 1111 1117,"$305.75",103-45-6788
+Ivy Nguyen,ivy.nguyen@bank.com,312.555.0176,ACC100255,5555 5555 5555 4444,"$92,000.00",113-45-6789
+Jack Wilson,jack.wilson@bank.com,+1 (646) 555-0199,ACC100256,4000 0000 0000 0002,"$1,499.49",123-45-6790

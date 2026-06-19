@@ -1,0 +1,13 @@
+id,full_name,email,phone,company,notes
+1,John Doe,john.doe@example.com,415-555-0132,Acme Corp,Prefers email; alt john.d@gmail.com
+2,Jane Smith,jane_smith@domain.com,(212) 555-0188,Globex,Call after 5pm
+3,Alice Brown,alice.brown@website.org,212.555.0143,Initech,Backup mobile 646-555-0179
+4,Bob Martin,bob.martin@company.co,+1 415 555 0177,Umbrella,No preferred email contact
+5,Carol White,carol.white@mail.net,305-555-0150,Stark Industries,VIP client
+6,David Lee,d.lee@startup.io,(650) 555-0111,Wayne Enterprises,Reach via david.lee@personal.com
+7,Emma Davis,emma.davis@corp.com,718-555-0164,Hooli,
+8,Frank Moore,frank.moore@biz.org,415-555-0190,Pied Piper,Old number 408-555-0122
+9,Grace Kim,grace.kim@service.com,(503) 555-0133,Vehement Capital,Prefers text messages
+10,Henry Clark,henry.clark@web.dev,602-555-0148,Massive Dynamic,
+11,Ivy Nguyen,ivy.nguyen@email.com,312.555.0176,Soylent,Secondary ivy.n@home.net
+12,Jack Wilson,jack.wilson@site.com,+1 (646) 555-0199,Cyberdyne,Escalations only
