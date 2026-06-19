@@ -31,11 +31,6 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-insecure-key-change-me")
 DEBUG = _env_bool("DJANGO_DEBUG", True)
 ALLOWED_HOSTS = _env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
 
-# Render injects RENDER_EXTERNAL_HOSTNAME; trust it automatically.
-_render_host = os.getenv("RENDER_EXTERNAL_HOSTNAME")
-if _render_host:
-    ALLOWED_HOSTS.append(_render_host)
-
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -113,6 +108,16 @@ STORAGES = {
     "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
 }
 
+# --- Single-container SPA hosting ---------------------------------------------
+# In production the React build is bundled at FRONTEND_DIST and served by
+# WhiteNoise at the site root ("/" -> index.html, plus hashed /assets/*), so one
+# Cloud Run container serves both the API (/api/) and the SPA. Guarded so local
+# dev (no build present) is unaffected.
+FRONTEND_DIST = Path(os.getenv("FRONTEND_DIST", BASE_DIR / "frontend_dist"))
+if FRONTEND_DIST.exists():
+    WHITENOISE_ROOT = FRONTEND_DIST
+    WHITENOISE_INDEX_FILE = True
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # --- REST framework -----------------------------------------------------------
@@ -130,12 +135,6 @@ REST_FRAMEWORK = {
 CORS_ALLOWED_ORIGINS = _env_list(
     "CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
 )
-
-# Render injects the frontend static site's hostname as FRONTEND_HOST
-# (see render.yaml) so the two services can find each other automatically.
-_frontend_host = os.getenv("FRONTEND_HOST")
-if _frontend_host:
-    CORS_ALLOWED_ORIGINS.append(f"https://{_frontend_host}")
 
 # --- Application-specific config ----------------------------------------------
 # Directory holding parquet snapshots of uploaded dataframes.

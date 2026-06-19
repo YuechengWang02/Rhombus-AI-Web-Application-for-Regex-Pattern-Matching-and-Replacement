@@ -14,10 +14,14 @@ import type {
   UploadResponse,
 } from "./types";
 
-// Normalize the API base URL. Render injects the backend hostname without a
-// scheme, so default to https:// when one isn't provided.
+// Normalize the API base URL:
+//   - unset            -> local dev default (separate Vite + Django ports)
+//   - empty string ""  -> same origin (production single-container build)
+//   - host with scheme -> used as-is; bare host -> assume https://
 function normalizeBaseUrl(raw: string | undefined): string {
-  const value = (raw ?? "http://localhost:8000").trim().replace(/\/$/, "");
+  if (raw === undefined) return "http://localhost:8000";
+  const value = raw.trim().replace(/\/$/, "");
+  if (value === "") return ""; // same-origin: requests use relative paths
   return /^https?:\/\//i.test(value) ? value : `https://${value}`;
 }
 

@@ -218,36 +218,49 @@ npm run typecheck
 
 ---
 
-## Deployment (Render)
+## Deployment (Google Cloud Run — Sydney)
 
-A [`render.yaml`](render.yaml) Blueprint provisions the whole stack — a Postgres
-database, the Django API (web service), and the React static site — in one click.
+Hosted as **one Cloud Run service in `australia-southeast1` (Sydney)** that serves both
+the API and the built React SPA from the same origin (no CORS, one URL). A multi-stage
+[`Dockerfile`](Dockerfile) builds the frontend, bundles it into the Django image, and
+WhiteNoise serves it. The database is **Neon serverless Postgres** in Sydney.
 
-1. Push this repo to GitHub.
-2. In Render: **New + → Blueprint**, connect the repo. Render reads `render.yaml`
-   and creates all three resources.
-3. The only secret you must enter is **`ANTHROPIC_API_KEY`** (marked `sync: false`).
-   Everything else is wired automatically:
-   - `DATABASE_URL` comes from the managed Postgres.
-   - `DJANGO_SECRET_KEY` is generated.
-   - The two services discover each other's hostnames via `fromService`, so CORS
-     (`FRONTEND_HOST` → backend) and the API URL (`VITE_API_BASE_URL` → frontend)
-     are set for you.
+**1. Database** — create a free [Neon](https://neon.tech) project in region
+**AWS `ap-southeast-2` (Sydney)** and copy its `DATABASE_URL`.
 
-**Build/start (already in the blueprint):**
+**2. Deploy** from the repo root (Cloud Run builds the `Dockerfile` for you):
 
-| Service | Build | Start |
-|---|---|---|
-| API (`backend/`) | `pip install -r requirements.txt && manage.py collectstatic --noinput && manage.py migrate` | `gunicorn config.wsgi:application` |
-| Web (`frontend/`) | `npm install && npm run build` | static (serves `dist/`) |
+```bash
+gcloud run deploy regex-replace \
+  --source . \
+  --region australia-southeast1 \
+  --allow-unauthenticated \
+  --max-instances 1 \
+  --memory 1Gi --cpu 1 \
+  --set-env-vars DJANGO_DEBUG=False,DJANGO_ALLOWED_HOSTS=.run.app,LLM_MODEL=claude-haiku-4-5-20251001 \
+  --set-env-vars DATABASE_URL="postgres://…neon-sydney…" \
+  --set-env-vars DJANGO_SECRET_KEY="$(openssl rand -hex 32)" \
+  --set-env-vars ANTHROPIC_API_KEY="sk-ant-…"
+```
 
-After the first deploy, set the two **Live URL** / **Demo video** placeholders at the
-top of this README.
+The container runs `migrate` on startup, then Gunicorn on `$PORT`. Open the printed
+`*.run.app` URL — the SPA loads and the full flow works end-to-end. Put that URL in the
+**Live URL** placeholder at the top of this README.
 
-> **Note on uploads:** the parquet `data_store/` lives on the container's local
-> disk, which Render wipes on each redeploy/restart (and the free tier sleeps when
-> idle). That's fine for a demo since uploads are TTL-scoped; to persist them across
-> restarts, attach a Render **persistent disk** or move the store to S3.
+| Env var | Purpose |
+|---|---|
+| `DATABASE_URL` | Neon (Sydney) Postgres connection string |
+| `ANTHROPIC_API_KEY` | Claude API key (use **Secret Manager** + `--set-secrets` in production) |
+| `DJANGO_SECRET_KEY` | Django secret |
+| `DJANGO_DEBUG` | `False` |
+| `DJANGO_ALLOWED_HOSTS` | `.run.app` (leading-dot wildcard matches the Cloud Run URL) |
+| `LLM_MODEL` | `claude-haiku-4-5-20251001` |
+
+> **Note on uploads:** the parquet `data_store/` lives on the container filesystem, which
+> is wiped on cold-start/redeploy (the service scales to zero when idle). `--max-instances 1`
+> keeps it coherent while warm; uploads are TTL-scoped so this is fine for a demo. To
+> persist across restarts, mount a **GCS bucket** as a Cloud Run volume at `DATA_STORE_DIR`
+> (no code change needed).
 
 ---
 

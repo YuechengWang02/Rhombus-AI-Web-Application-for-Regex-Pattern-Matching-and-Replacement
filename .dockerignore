@@ -1,0 +1,26 @@
+# Version control / editor
+.git
+.gitignore
+.vscode
+.idea
+
+# Python
+backend/.venv
+**/__pycache__
+**/*.pyc
+backend/db.sqlite3
+backend/staticfiles
+backend/data_store
+backend/.pytest_cache
+backend/.env
+
+# Sample data outputs (input fixtures are kept for graders)
+backend/sample_data/output
+
+# Node / Vite (frontend deps are installed inside the build stage)
+frontend/node_modules
+frontend/dist
+frontend/.vite
+
+# Docs / plans
+*.md
