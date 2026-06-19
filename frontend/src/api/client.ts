@@ -14,9 +14,14 @@ import type {
   UploadResponse,
 } from "./types";
 
-const BASE_URL = (
-  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000"
-).replace(/\/$/, "");
+// Normalize the API base URL. Render injects the backend hostname without a
+// scheme, so default to https:// when one isn't provided.
+function normalizeBaseUrl(raw: string | undefined): string {
+  const value = (raw ?? "http://localhost:8000").trim().replace(/\/$/, "");
+  return /^https?:\/\//i.test(value) ? value : `https://${value}`;
+}
+
+const BASE_URL = normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL);
 
 export class ApiRequestError extends Error {
   status: number;
@@ -78,7 +83,8 @@ function postJSON<T>(path: string, body: unknown): Promise<T> {
 }
 
 export interface ReplacementBody {
-  column: string;
+  // Omit (or pass an empty list) to target all text columns.
+  columns?: string[];
   regex: string;
   flags?: string;
   replacement: string;
@@ -86,7 +92,8 @@ export interface ReplacementBody {
 }
 
 export interface CreativeBody {
-  column: string;
+  // Omit (or pass an empty list) to target all text columns.
+  columns?: string[];
   description?: string;
   params?: Record<string, unknown>;
 }
@@ -110,7 +117,7 @@ export const api = {
   generateRegex(body: {
     description: string;
     dataset_id?: string;
-    column?: string;
+    columns?: string[];
   }): Promise<GenerateRegexResponse> {
     return postJSON<GenerateRegexResponse>("/api/regex/generate/", body);
   },

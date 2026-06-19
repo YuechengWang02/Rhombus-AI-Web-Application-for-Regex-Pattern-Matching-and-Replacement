@@ -103,12 +103,12 @@ def test_redaction_scenario(client, monkeypatch, filename):
     for column, description, replacement, _ in ops:
         gen = client.post(
             "/api/regex/generate/",
-            {"description": description, "dataset_id": dataset_id, "column": column},
+            {"description": description, "dataset_id": dataset_id, "columns": [column]},
             format="json",
         )
         assert gen.status_code == 200, gen.content
         body = {
-            "column": column,
+            "columns": [column],
             "regex": gen.json()["regex"],
             "replacement": replacement,
             "description": description,
@@ -123,6 +123,33 @@ def test_redaction_scenario(client, monkeypatch, filename):
         assert remaining == 0, f"{filename}:{column} still has {remaining} matches of {residual}"
         token_hits = int(df[column].astype(str).str.contains(regex.escape(replacement)).sum())
         assert token_hits > 0, f"{filename}:{column} has no '{replacement}' tokens"
+
+
+@pytest.mark.django_db
+def test_apply_to_all_text_columns(client, monkeypatch):
+    """Omitting `columns` redacts emails across every text column in one apply."""
+    monkeypatch.setattr(llm, "generate_regex", _fake_generate)
+    with (SAMPLE_DIR / "contacts.csv").open("rb") as f:
+        up = client.post("/api/uploads/", {"file": f}, format="multipart")
+    dataset_id = up.json()["dataset"]["id"]
+
+    gen = client.post(
+        "/api/regex/generate/",
+        {"description": "find email addresses", "dataset_id": dataset_id},
+        format="json",
+    )
+    # No `columns` key -> all text columns.
+    applied = client.post(
+        f"/api/uploads/{dataset_id}/apply/",
+        {"regex": gen.json()["regex"], "replacement": "[EMAIL]"},
+        format="json",
+    )
+    assert applied.status_code == 201, applied.content
+
+    df = storage.load_dataframe(dataset_id)
+    # Emails are gone from BOTH the dedicated column and the free-text notes.
+    assert _count_matches(df["email"], EMAIL) == 0
+    assert _count_matches(df["notes"], EMAIL) == 0
 
 
 @pytest.mark.django_db

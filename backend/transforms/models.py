@@ -31,7 +31,8 @@ class Transformation(models.Model):
         Dataset, related_name="transformations", on_delete=models.CASCADE
     )
     kind = models.CharField(max_length=16, choices=Kind.choices, default=Kind.REGEX)
-    column = models.CharField(max_length=255)
+    # Columns the transformation was applied to (one or many text columns).
+    columns = models.JSONField(default=list)
     nl_description = models.TextField(blank=True)
     # Regex-specific fields (blank for creative transforms).
     regex_pattern = models.TextField(blank=True)
@@ -47,4 +48,5 @@ class Transformation(models.Model):
         ordering = ["created_at"]
 
     def __str__(self) -> str:  # pragma: no cover - trivial
-        return f"{self.column}: /{self.regex_pattern}/ -> {self.replacement!r}"
+        cols = ", ".join(self.columns) if self.columns else "(all)"
+        return f"{cols}: /{self.regex_pattern}/ -> {self.replacement!r}"

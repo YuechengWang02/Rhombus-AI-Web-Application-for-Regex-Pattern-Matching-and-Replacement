@@ -218,6 +218,39 @@ npm run typecheck
 
 ---
 
+## Deployment (Render)
+
+A [`render.yaml`](render.yaml) Blueprint provisions the whole stack — a Postgres
+database, the Django API (web service), and the React static site — in one click.
+
+1. Push this repo to GitHub.
+2. In Render: **New + → Blueprint**, connect the repo. Render reads `render.yaml`
+   and creates all three resources.
+3. The only secret you must enter is **`ANTHROPIC_API_KEY`** (marked `sync: false`).
+   Everything else is wired automatically:
+   - `DATABASE_URL` comes from the managed Postgres.
+   - `DJANGO_SECRET_KEY` is generated.
+   - The two services discover each other's hostnames via `fromService`, so CORS
+     (`FRONTEND_HOST` → backend) and the API URL (`VITE_API_BASE_URL` → frontend)
+     are set for you.
+
+**Build/start (already in the blueprint):**
+
+| Service | Build | Start |
+|---|---|---|
+| API (`backend/`) | `pip install -r requirements.txt && manage.py collectstatic --noinput && manage.py migrate` | `gunicorn config.wsgi:application` |
+| Web (`frontend/`) | `npm install && npm run build` | static (serves `dist/`) |
+
+After the first deploy, set the two **Live URL** / **Demo video** placeholders at the
+top of this README.
+
+> **Note on uploads:** the parquet `data_store/` lives on the container's local
+> disk, which Render wipes on each redeploy/restart (and the free tier sleeps when
+> idle). That's fine for a demo since uploads are TTL-scoped; to persist them across
+> restarts, attach a Render **persistent disk** or move the store to S3.
+
+---
+
 ## Design notes
 
 - **Server-side data store.** Uploaded data is parsed once and saved as parquet;

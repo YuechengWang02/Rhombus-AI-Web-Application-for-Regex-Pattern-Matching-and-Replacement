@@ -41,12 +41,13 @@ export interface GenerateRegexResponse {
 
 export interface DiffRow {
   row: number;
+  column: string;
   before: string | null;
   after: string | null;
 }
 
 export interface PreviewResponse {
-  column: string;
+  columns: string[];
   match_count: number;
   changed_count: number;
   diffs: DiffRow[];
@@ -60,7 +61,7 @@ export type TransformKind = "regex" | "dates" | "phones";
 export interface Transformation {
   id: string;
   kind: TransformKind;
-  column: string;
+  columns: string[];
   nl_description: string;
   regex_pattern: string;
   flags: string;
@@ -79,7 +80,7 @@ export interface ApplyResponse extends RowsPage {
 
 export interface CreativePreviewResponse {
   kind: TransformKind;
-  column: string;
+  columns: string[];
   spec: Record<string, unknown>;
   info: Record<string, unknown>;
   changed_count: number;

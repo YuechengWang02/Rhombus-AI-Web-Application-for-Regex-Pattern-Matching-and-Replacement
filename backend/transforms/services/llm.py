@@ -105,10 +105,13 @@ You configure a phone-number normalization step for a spreadsheet column.
 
 Given a natural-language instruction and sample values, output ONLY a JSON \
 object (no prose, no code fences) with keys:
-- "target_format" (string): one of "e164" (+15551234567), "dashes" \
-(555-123-4567), or "parens" ((555) 123-4567). Default "e164".
-- "default_country_code" (string): digits only, e.g. "1" for US/Canada. Use \
-"1" if unspecified.
+- "target_format" (string): one of
+  - "national" (DEFAULT): clean spacing, keeps the area code, no country code \
+unless the value already had one, e.g. "415 555 0132".
+  - "e164" (+15551234567), "dashes" (555-123-4567), or "parens" ((555) 123-4567).
+  Only pick e164/dashes/parens if the instruction clearly asks for that style.
+- "default_country_code" (string): digits only, e.g. "1" for US/Canada (only \
+used by e164). Use "1" if unspecified.
 - "explanation" (string): one plain-English sentence.
 """
 
@@ -157,9 +160,9 @@ def infer_phone_spec(description: str, samples: list[str] | None = None) -> dict
         PHONE_SPEC_PROMPT,
         _build_user_message(description or "normalize phone numbers", samples),
     )
-    fmt = str(payload.get("target_format") or "e164").lower()
-    if fmt not in {"e164", "dashes", "parens"}:
-        fmt = "e164"
+    fmt = str(payload.get("target_format") or "national").lower()
+    if fmt not in {"national", "e164", "dashes", "parens"}:
+        fmt = "national"
     cc = "".join(ch for ch in str(payload.get("default_country_code") or "1") if ch.isdigit())
     return {
         "target_format": fmt,

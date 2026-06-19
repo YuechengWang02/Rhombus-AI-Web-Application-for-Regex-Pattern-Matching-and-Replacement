@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import {
   createColumnHelper,
   flexRender,
@@ -14,13 +14,33 @@ interface Props {
   totalPages: number;
   totalRows: number;
   onPageChange: (page: number) => void;
+  // Replacement tokens to bold in the grid (e.g. "REDACTED", "[EMAIL]").
+  highlights?: string[];
 }
 
 const helper = createColumnHelper<Row>();
 
-function renderCell(value: unknown): string {
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Render a cell, bolding any occurrence of an applied replacement token. */
+function renderCell(value: unknown, highlights: string[]): ReactNode {
   if (value === null || value === undefined) return "";
-  return String(value);
+  const text = String(value);
+  if (highlights.length === 0) return text;
+
+  const pattern = new RegExp(`(${highlights.map(escapeRegExp).join("|")})`, "g");
+  const segments = text.split(pattern);
+  return segments.map((seg, i) =>
+    highlights.includes(seg) ? (
+      <strong key={i} className="redacted">
+        {seg}
+      </strong>
+    ) : (
+      seg
+    ),
+  );
 }
 
 /** Paginated read-only table built on TanStack Table. */
@@ -31,6 +51,7 @@ export function DataGrid({
   totalPages,
   totalRows,
   onPageChange,
+  highlights = [],
 }: Props) {
   const tableColumns = useMemo(
     () =>
@@ -43,10 +64,10 @@ export function DataGrid({
               {col.is_text && <span className="badge" title="Text column">T</span>}
             </span>
           ),
-          cell: (info) => renderCell(info.getValue()),
+          cell: (info) => renderCell(info.getValue(), highlights),
         }),
       ),
-    [columns],
+    [columns, highlights],
   );
 
   const table = useReactTable({

@@ -62,7 +62,7 @@ def test_generate_regex_mocked(client, monkeypatch):
 @pytest.mark.django_db
 def test_preview_apply_download_undo(client, uploaded):
     dataset_id = uploaded["dataset"]["id"]
-    payload = {"column": "Email", "regex": EMAIL_REGEX, "replacement": "REDACTED"}
+    payload = {"columns": ["Email"], "regex": EMAIL_REGEX, "replacement": "REDACTED"}
 
     # Preview should report 3 changed rows without mutating data.
     preview = client.post(f"/api/uploads/{dataset_id}/preview/", payload, format="json")
@@ -95,8 +95,26 @@ def test_apply_rejects_non_text_column(client, uploaded):
     dataset_id = uploaded["dataset"]["id"]
     resp = client.post(
         f"/api/uploads/{dataset_id}/apply/",
-        {"column": "ID", "regex": r"\d", "replacement": "X"},
+        {"columns": ["ID"], "regex": r"\d", "replacement": "X"},
         format="json",
     )
     assert resp.status_code == 400
     assert resp.json()["error"] == "validation_error"
+
+
+@pytest.mark.django_db
+def test_apply_all_text_columns_by_default(client, uploaded):
+    """Omitting `columns` redacts across every text column (Name + Email)."""
+    dataset_id = uploaded["dataset"]["id"]
+    # An email regex over all text columns only changes the Email cells.
+    applied = client.post(
+        f"/api/uploads/{dataset_id}/apply/",
+        {"regex": EMAIL_REGEX, "replacement": "REDACTED"},
+        format="json",
+    )
+    assert applied.status_code == 201, applied.content
+    # The transformation records all text columns it ran over.
+    assert set(applied.json()["transformation"]["columns"]) == {"Name", "Email"}
+    rows = applied.json()["rows"]
+    assert all(r["Email"] == "REDACTED" for r in rows)
+    assert rows[0]["Name"] == "John Doe"  # names don't match an email pattern

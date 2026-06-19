@@ -9,7 +9,7 @@ import type {
 } from "./api/types";
 import { FileUpload } from "./components/FileUpload";
 import { DataGrid } from "./components/DataGrid";
-import { PatternPanel, type BusyAction } from "./components/PatternPanel";
+import { PatternPanel, type BusyAction, type Scope } from "./components/PatternPanel";
 import { RegexPreview } from "./components/RegexPreview";
 import { BeforeAfter } from "./components/BeforeAfter";
 import { TransformHistory } from "./components/TransformHistory";
@@ -21,7 +21,8 @@ type Busy = BusyAction | "upload" | "undo";
 export default function App() {
   const [dataset, setDataset] = useState<Dataset | null>(null);
   const [page, setPage] = useState<RowsPage | null>(null);
-  const [column, setColumn] = useState("");
+  // Which columns ops target. Default: all text columns.
+  const [scope, setScope] = useState<Scope>({ applyToAll: true, selectedColumns: [] });
   const [generated, setGenerated] = useState<GenerateRegexResponse | null>(null);
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
   const [history, setHistory] = useState<Transformation[]>([]);
@@ -33,6 +34,19 @@ export default function App() {
     const active = history.filter((t) => !t.is_undone);
     return active.length ? active[active.length - 1].id : null;
   }, [history]);
+
+  // Bold applied replacement tokens (e.g. "REDACTED") wherever they appear.
+  const highlights = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          history
+            .filter((t) => !t.is_undone && t.kind === "regex" && t.replacement)
+            .map((t) => t.replacement),
+        ),
+      ),
+    [history],
+  );
 
   /** Run an async action with shared busy/error handling. */
   const run = useCallback(
@@ -56,12 +70,16 @@ export default function App() {
     setHistory(await api.transformations(datasetId));
   }, []);
 
+  // Resolve the scope to a columns list for the API (undefined = all text columns).
+  const scopeColumns = (): string[] | undefined =>
+    scope.applyToAll ? undefined : scope.selectedColumns;
+
   const handleUpload = (file: File) =>
     run("upload", async () => {
       const res = await api.upload(file);
       setDataset(res.dataset);
       setPage(res);
-      setColumn(res.dataset.text_columns[0] ?? "");
+      setScope({ applyToAll: true, selectedColumns: [] });
       setGenerated(null);
       setPreview(null);
       setHistory([]);
@@ -82,7 +100,7 @@ export default function App() {
         await api.generateRegex({
           description,
           dataset_id: dataset.id,
-          column: column || undefined,
+          columns: scopeColumns(),
         }),
       );
     });
@@ -90,13 +108,15 @@ export default function App() {
   const handlePreview = (body: ReplacementBody) =>
     dataset &&
     run("preview", async () => {
-      setPreview(await api.previewReplace(dataset.id, body));
+      setPreview(
+        await api.previewReplace(dataset.id, { ...body, columns: scopeColumns() }),
+      );
     });
 
   const handleApply = (body: ReplacementBody) =>
     dataset &&
     run("apply", async () => {
-      const res = await api.applyReplace(dataset.id, body);
+      const res = await api.applyReplace(dataset.id, { ...body, columns: scopeColumns() });
       setPage(res);
       setPreview(null);
       await refreshHistory(dataset.id);
@@ -110,7 +130,10 @@ export default function App() {
   ) =>
     dataset &&
     run(kind, async () => {
-      const res = await api.applyCreative(dataset.id, kind, { column, description });
+      const res = await api.applyCreative(dataset.id, kind, {
+        columns: scopeColumns(),
+        description,
+      });
       setPage(res);
       setPreview(null);
       await refreshHistory(dataset.id);
@@ -131,7 +154,7 @@ export default function App() {
         <h1>Regex Pattern Matching &amp; Replacement</h1>
         <p className="muted">
           Upload a CSV/Excel file, describe a pattern in plain English, and apply
-          replacements to a text column.
+          replacements across one or more text columns at once.
         </p>
       </header>
 
@@ -153,8 +176,8 @@ export default function App() {
           <div className="workspace__left">
             <PatternPanel
               textColumns={dataset.text_columns}
-              column={column}
-              onColumnChange={setColumn}
+              scope={scope}
+              onScopeChange={setScope}
               generated={generated}
               busy={(busy === "upload" || busy === "undo" ? null : busy) as BusyAction}
               onGenerate={handleGenerate}
@@ -203,6 +226,7 @@ export default function App() {
               totalPages={page.total_pages}
               totalRows={page.total_rows}
               onPageChange={changePage}
+              highlights={highlights}
             />
           </div>
         </section>

@@ -72,7 +72,41 @@ def apply_dates(series: pd.Series, spec: dict) -> ColumnResult:
 
 # --- Phone normalization ------------------------------------------------------
 
-DEFAULT_PHONE_SPEC = {"target_format": "e164", "default_country_code": "1"}
+# Default: clean, area-code-aware national formatting that does NOT assume a
+# country code (numbers may come from anywhere). Explicit formats (e164/dashes/
+# parens) remain available via the spec.
+DEFAULT_PHONE_SPEC = {"target_format": "national", "default_country_code": "1"}
+
+
+def _group_national(digits: str) -> str:
+    """Format a bare national number with spaces (area code preserved)."""
+    if len(digits) == 11 and digits[0] == "1":
+        digits = digits[1:]  # drop a domestic NANP trunk/country '1'
+    if len(digits) == 10:  # has an area code
+        return f"{digits[:3]} {digits[3:6]} {digits[6:]}"
+    if len(digits) == 7:  # local number, no area code
+        return f"{digits[:3]} {digits[3:]}"
+    return digits  # unknown length: just stripped of punctuation/brackets
+
+
+def _format_national(value):
+    """Clean a phone number: strip brackets/punctuation, keep the area code,
+    space the groups, and only retain a country code if the original had one.
+    """
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return value
+    text = str(value)
+    digits = re.sub(r"\D", "", text)
+    if not digits:
+        return value  # nothing phone-like; leave as-is
+
+    if text.lstrip().startswith("+"):
+        # Keep the international country code the user provided.
+        if len(digits) > 10:
+            cc, national = digits[:-10], digits[-10:]
+            return f"+{cc} {_group_national(national)}"
+        return "+" + digits
+    return _group_national(digits)
 
 
 def _normalize_phone(value, target_format: str, country_code: str):
@@ -104,19 +138,27 @@ def _normalize_phone(value, target_format: str, country_code: str):
 
 
 def apply_phones(series: pd.Series, spec: dict) -> ColumnResult:
-    """Normalize phone numbers to E.164 or a national format per *spec*."""
-    target_format = (spec.get("target_format") or "e164").lower()
-    if target_format not in {"e164", "dashes", "parens"}:
+    """Normalize phone numbers per *spec*.
+
+    ``national`` (default) cleans formatting, preserves the area code, and never
+    invents a country code. ``e164``/``dashes``/``parens`` are explicit formats
+    that do use ``default_country_code``.
+    """
+    target_format = (spec.get("target_format") or "national").lower()
+    if target_format not in {"national", "e164", "dashes", "parens"}:
         raise ValidationError(
-            "Invalid phone target_format. Use 'e164', 'dashes', or 'parens'."
+            "Invalid phone target_format. Use 'national', 'e164', 'dashes', or 'parens'."
         )
     country_code = "".join(
         c for c in str(spec.get("default_country_code") or "1") if c.isdigit()
     ) or "1"
 
-    new_series = series.map(
-        lambda v: _normalize_phone(v, target_format, country_code)
-    )
+    if target_format == "national":
+        new_series = series.map(_format_national)
+    else:
+        new_series = series.map(
+            lambda v: _normalize_phone(v, target_format, country_code)
+        )
     return ColumnResult(
         new_series=new_series,
         changed_count=_count_changes(series, new_series),

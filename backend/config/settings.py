@@ -131,6 +131,12 @@ CORS_ALLOWED_ORIGINS = _env_list(
     "CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
 )
 
+# Render injects the frontend static site's hostname as FRONTEND_HOST
+# (see render.yaml) so the two services can find each other automatically.
+_frontend_host = os.getenv("FRONTEND_HOST")
+if _frontend_host:
+    CORS_ALLOWED_ORIGINS.append(f"https://{_frontend_host}")
+
 # --- Application-specific config ----------------------------------------------
 # Directory holding parquet snapshots of uploaded dataframes.
 DATA_STORE_DIR = Path(os.getenv("DATA_STORE_DIR", BASE_DIR / "data_store"))

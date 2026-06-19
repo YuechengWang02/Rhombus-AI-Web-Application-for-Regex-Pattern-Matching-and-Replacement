@@ -95,13 +95,13 @@ def run_scenario(client, scenario) -> bool:
     total_changed = 0
     for column, description, replacement in scenario["ops"]:
         gen = _post_json(client, "/api/regex/generate/",
-                         {"description": description, "dataset_id": dataset_id, "column": column})
+                         {"description": description, "dataset_id": dataset_id, "columns": [column]})
         if gen.status_code != 200:
             print(f"  [{column}] GENERATE FAILED ({gen.status_code}): {gen.content[:160]}")
             return False
         regex = gen.json()["regex"]
 
-        body = {"column": column, "regex": regex, "replacement": replacement,
+        body = {"columns": [column], "regex": regex, "replacement": replacement,
                 "description": description}
         prev = _post_json(client, f"/api/uploads/{dataset_id}/preview/", body)
         changed = prev.json().get("changed_count", 0) if prev.status_code == 200 else 0

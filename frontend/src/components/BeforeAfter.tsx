@@ -20,14 +20,16 @@ export function BeforeAfter({ diffs, totalChanged }: Props) {
         <thead>
           <tr>
             <th>Row</th>
+            <th>Column</th>
             <th>Before</th>
             <th>After</th>
           </tr>
         </thead>
         <tbody>
           {diffs.map((d) => (
-            <tr key={d.row}>
+            <tr key={`${d.column}-${d.row}`}>
               <td>{d.row + 1}</td>
+              <td>{d.column}</td>
               <td className="diff__before">{d.before ?? ""}</td>
               <td className="diff__after">{d.after ?? ""}</td>
             </tr>

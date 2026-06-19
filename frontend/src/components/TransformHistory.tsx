@@ -7,13 +7,20 @@ interface Props {
   busy?: boolean;
 }
 
+function describeColumns(columns: string[]): string {
+  if (columns.length === 0) return "all text columns";
+  if (columns.length <= 3) return columns.join(", ");
+  return `${columns.length} columns`;
+}
+
 function describe(t: Transformation): string {
+  const where = describeColumns(t.columns);
   if (t.kind === "regex") {
-    return `Replace /${t.regex_pattern}/ → "${t.replacement}" in ${t.column}`;
+    return `Replace /${t.regex_pattern}/ → "${t.replacement}" in ${where}`;
   }
-  if (t.kind === "dates") return `Standardize dates in ${t.column}`;
-  if (t.kind === "phones") return `Normalize phone numbers in ${t.column}`;
-  return `${t.kind} on ${t.column}`;
+  if (t.kind === "dates") return `Standardize dates in ${where}`;
+  if (t.kind === "phones") return `Normalize phone numbers in ${where}`;
+  return `${t.kind} on ${where}`;
 }
 
 /** History list; only the most recent active transform can be undone. */

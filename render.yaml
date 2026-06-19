@@ -1,0 +1,63 @@
+# Render Blueprint — provisions the whole stack in one click.
+# In Render: New + → Blueprint → connect this repo. It creates:
+#   - a Postgres database
+#   - the Django API (web service)
+#   - the React static site
+# The two services discover each other's hostnames automatically via
+# `fromService`, so the only secret you must enter is ANTHROPIC_API_KEY.
+
+databases:
+  - name: regex-replace-db
+    plan: free
+
+services:
+  # --- Backend: Django + DRF (Gunicorn) ---
+  - type: web
+    name: regex-replace-api
+    runtime: python
+    rootDir: backend
+    plan: free
+    healthCheckPath: /api/health/
+    buildCommand: >-
+      pip install -r requirements.txt &&
+      python manage.py collectstatic --noinput &&
+      python manage.py migrate
+    startCommand: gunicorn config.wsgi:application
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      - key: DJANGO_DEBUG
+        value: "False"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: LLM_MODEL
+        value: claude-haiku-4-5-20251001
+      - key: ANTHROPIC_API_KEY
+        sync: false # set this secret in the Render dashboard
+      - key: DATABASE_URL
+        fromDatabase:
+          name: regex-replace-db
+          property: connectionString
+      - key: FRONTEND_HOST # used to build the CORS allowed origin
+        fromService:
+          type: web
+          name: regex-replace-web
+          property: host
+
+  # --- Frontend: React + Vite static site ---
+  - type: web
+    name: regex-replace-web
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_BASE_URL # backend hostname (client adds https://)
+        fromService:
+          type: web
+          name: regex-replace-api
+          property: host
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

@@ -32,7 +32,7 @@ describe("api client", () => {
       json: async () => ({ error: "unprocessable", detail: "bad regex" }),
     });
     await expect(
-      api.previewReplace("abc", { column: "c", regex: "(", replacement: "" }),
+      api.previewReplace("abc", { columns: ["c"], regex: "(", replacement: "" }),
     ).rejects.toMatchObject({
       status: 422,
       code: "unprocessable",

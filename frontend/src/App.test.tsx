@@ -80,7 +80,7 @@ describe("App workflow", () => {
       transformation: {
         id: "t1",
         kind: "regex",
-        column: "Email",
+        columns: ["Email"],
         nl_description: "",
         regex_pattern: ".+@.+",
         flags: "",
@@ -105,7 +105,7 @@ describe("App workflow", () => {
       {
         id: "t1",
         kind: "regex",
-        column: "Email",
+        columns: ["Email"],
         nl_description: "",
         regex_pattern: ".+@.+",
         flags: "",
@@ -121,18 +121,21 @@ describe("App workflow", () => {
     await uploadFile();
     await screen.findByText("john@example.com");
 
-    // Choose the Email column, enter a regex + replacement, and apply.
-    await userEvent.selectOptions(screen.getByLabelText("Column"), "Email");
+    // Default scope is "all text columns"; just enter a regex. The replacement
+    // field already defaults to "REDACTED", so clear before retyping.
     await userEvent.type(screen.getByLabelText("Regex pattern"), ".+@.+");
-    await userEvent.type(screen.getByLabelText("Replacement value"), "REDACTED");
+    const replacementInput = screen.getByLabelText("Replacement value");
+    await userEvent.clear(replacementInput);
+    await userEvent.type(replacementInput, "REDACTED");
     await userEvent.click(screen.getByRole("button", { name: "Apply replacement" }));
 
     // Grid now shows redacted values and history lists the transformation.
     const cells = await screen.findAllByText("REDACTED");
     expect(cells.length).toBeGreaterThanOrEqual(2);
+    // Apply-to-all sends no explicit columns (undefined = all text columns).
     expect(api.applyReplace).toHaveBeenCalledWith(
       "d1",
-      expect.objectContaining({ column: "Email", replacement: "REDACTED" }),
+      expect.objectContaining({ columns: undefined, replacement: "REDACTED" }),
     );
     expect(screen.getByText(/Replace .* in Email/)).toBeInTheDocument();
   });

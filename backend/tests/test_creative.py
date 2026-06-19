@@ -33,7 +33,22 @@ def test_apply_dates_leaves_unparseable():
     assert result.changed_count == 0
 
 
-def test_apply_phones_e164_and_national():
+def test_apply_phones_national_is_default():
+    """Default 'national' keeps the area code, spaces groups, and never adds +1."""
+    series = pd.Series(
+        ["(555) 123-4567", "555.123.4567", "1-415-555-0132", "123-4567", "+44 20 7946 0958"]
+    )
+    out = creative.apply_phones(series, {})  # no target_format -> national default
+    assert out.new_series.tolist() == [
+        "555 123 4567",   # brackets removed, area code kept, spaced
+        "555 123 4567",   # dots removed
+        "415 555 0132",   # leading domestic '1' dropped, no forced +1
+        "123 4567",       # 7-digit local: just the number, no area code
+        "+44 207 946 0958",  # explicit '+' country code preserved
+    ]
+
+
+def test_apply_phones_explicit_formats():
     series = pd.Series(["(555) 123-4567", "555.123.4567", "+44 20 7946 0958"])
     e164 = creative.apply_phones(series, {"target_format": "e164", "default_country_code": "1"})
     assert e164.new_series.tolist() == [
@@ -62,7 +77,7 @@ def _upload(client, name, content):
 @pytest.mark.django_db
 def test_dates_preview_and_apply_with_params(client):
     dataset_id = _upload(client, "dates.csv", DATES_CSV)
-    body = {"column": "d", "params": {"target_format": "%Y-%m-%d", "dayfirst": True}}
+    body = {"columns": ["d"], "params": {"target_format": "%Y-%m-%d", "dayfirst": True}}
 
     preview = client.post(
         f"/api/uploads/{dataset_id}/transform/dates/preview/", body, format="json"
@@ -82,7 +97,7 @@ def test_dates_preview_and_apply_with_params(client):
 @pytest.mark.django_db
 def test_phones_apply_and_undo(client):
     dataset_id = _upload(client, "phones.csv", PHONES_CSV)
-    body = {"column": "phone", "params": {"target_format": "e164", "default_country_code": "1"}}
+    body = {"columns": ["phone"], "params": {"target_format": "e164", "default_country_code": "1"}}
 
     applied = client.post(
         f"/api/uploads/{dataset_id}/transform/phones/apply/", body, format="json"
@@ -110,7 +125,7 @@ def test_creative_uses_llm_when_no_params(client, monkeypatch):
     monkeypatch.setattr(llm, "infer_date_spec", fake_infer)
     resp = client.post(
         f"/api/uploads/{dataset_id}/transform/dates/preview/",
-        {"column": "d", "description": "standardize to ISO"},
+        {"columns": ["d"], "description": "standardize to ISO"},
         format="json",
     )
     assert resp.status_code == 200, resp.content
@@ -123,7 +138,7 @@ def test_unknown_kind_rejected(client):
     dataset_id = _upload(client, "dates.csv", DATES_CSV)
     resp = client.post(
         f"/api/uploads/{dataset_id}/transform/bogus/preview/",
-        {"column": "d", "params": {}},
+        {"columns": ["d"], "params": {}},
         format="json",
     )
     assert resp.status_code == 400

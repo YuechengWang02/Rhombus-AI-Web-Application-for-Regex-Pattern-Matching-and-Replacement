@@ -162,6 +162,26 @@ button.primary,
   color: #fff;
 }
 
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  padding: 2px 0;
+  cursor: pointer;
+}
+.checkbox-row input {
+  width: auto;
+}
+.column-picker {
+  margin-top: 6px;
+  max-height: 160px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+
 .creative {
   margin-top: 12px;
   border: 1px solid var(--border);
@@ -212,6 +232,10 @@ thead th {
   color: var(--accent);
   border-radius: 4px;
   padding: 1px 4px;
+}
+.redacted {
+  font-weight: 700;
+  color: var(--danger);
 }
 .grid__pager {
   display: flex;
