@@ -1,0 +1,25 @@
+# Core
+Django==5.1.4
+djangorestframework==3.15.2
+django-cors-headers==4.6.0
+python-dotenv==1.0.1
+dj-database-url==2.3.0
+
+# Data processing
+pandas==2.2.3
+openpyxl==3.1.5          # Excel (.xlsx) read/write
+pyarrow==18.1.0          # parquet server-side store
+regex==2024.11.6         # regex engine with per-call timeout (ReDoS guard)
+chardet==5.2.0           # CSV encoding detection
+
+# LLM
+anthropic==0.42.0
+
+# Server / deploy
+gunicorn==23.0.0
+whitenoise==6.8.2
+psycopg2-binary==2.9.10  # Postgres driver (used in production)
+
+# Dev / test
+pytest==8.3.4
+pytest-django==4.9.0

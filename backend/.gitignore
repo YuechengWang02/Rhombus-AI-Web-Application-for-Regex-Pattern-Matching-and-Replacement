@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Django
+*.sqlite3
+db.sqlite3
+/staticfiles/
+
+# Env
+.env
+
+# Local file store
+/media/
+/data_store/
+
+# Test / coverage
+.pytest_cache/
+.coverage
+htmlcov/
