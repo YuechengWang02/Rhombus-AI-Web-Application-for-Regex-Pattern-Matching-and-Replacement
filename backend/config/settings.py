@@ -83,6 +83,7 @@ DATABASES = {
     "default": dj_database_url.config(
         default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
         conn_max_age=600,
+        conn_health_checks=True,
     )
 }
 
@@ -149,6 +150,20 @@ REGEX_TIMEOUT_SECONDS = float(os.getenv("REGEX_TIMEOUT_SECONDS", "2"))
 # Allow large uploads to stream to disk rather than memory.
 DATA_UPLOAD_MAX_MEMORY_SIZE = MAX_UPLOAD_BYTES
 FILE_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024  # 2 MB before spilling to a temp file
+
+# --- Logging ------------------------------------------------------------------
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {"class": "logging.StreamHandler"},
+    },
+    "root": {"handlers": ["console"], "level": "WARNING"},
+    "loggers": {
+        "django": {"handlers": ["console"], "level": "WARNING", "propagate": False},
+        "django.request": {"handlers": ["console"], "level": "ERROR", "propagate": False},
+    },
+}
 
 # --- LLM ----------------------------------------------------------------------
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
