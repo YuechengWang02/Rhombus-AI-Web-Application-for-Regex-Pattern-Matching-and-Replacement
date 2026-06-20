@@ -10,7 +10,7 @@ Built with **Django + Django REST Framework** (backend) and **React + TypeScript
 Vite** (frontend).
 
 <!-- Demo video: paste the embed/link here -->
-<!-- Live URL: paste the deployed URL here -->
+<!-- Live URL: https://regex-replace-83517488052.australia-southeast1.run.app -->
 
 ---
 
