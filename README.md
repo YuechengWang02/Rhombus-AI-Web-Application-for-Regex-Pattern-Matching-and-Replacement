@@ -9,7 +9,7 @@ undo, and CSV/Excel export. It also ships two LLM-assisted **creative transforms
 Built with **Django + Django REST Framework** (backend) and **React + TypeScript +
 Vite** (frontend).
 
-<!-- Demo video: paste the embed/link here -->
+[![Demo Video](https://img.youtube.com/vi/7Y1UKu7G4wg/maxresdefault.jpg)](https://youtu.be/7Y1UKu7G4wg)
 <!-- Live URL: https://regex-replace-83517488052.australia-southeast1.run.app -->
 
 ---

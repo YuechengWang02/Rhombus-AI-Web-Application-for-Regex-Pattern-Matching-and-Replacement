@@ -37,4 +37,4 @@ EXPOSE 8080
 
 # Run DB migrations on startup, then serve. Shell form so $PORT expands.
 CMD python manage.py migrate --noinput && \
-    gunicorn config.wsgi --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    gunicorn config.wsgi --bind 0.0.0.0:$PORT --workers 2 --worker-class gevent --worker-connections 20 --timeout 120

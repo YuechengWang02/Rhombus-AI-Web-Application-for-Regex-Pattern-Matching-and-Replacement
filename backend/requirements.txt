@@ -17,6 +17,7 @@ anthropic==0.42.0
 
 # Server / deploy
 gunicorn==23.0.0
+gevent==24.11.1
 whitenoise==6.8.2
 psycopg2-binary==2.9.10  # Postgres driver (used in production)
 
